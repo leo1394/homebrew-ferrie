@@ -27,12 +27,26 @@ func appArchive(t *testing.T, name string) []byte {
     return buffer.Bytes()
 }
 
-func TestURLArguments(t *testing.T) {
-    for _, args := range [][]string{{"--url", "https://example.com/app", "--android", "--device", "serial"}, {"--url=https://example.com/app", "--ios"}} {
-        got, err := parse(args)
-        if err != nil || got.url != "https://example.com/app" || got.platform == "" { t.Fatalf("%+v %v", got, err) }
+func TestTargetURLDetection(t *testing.T) {
+    for _, target := range []string{"https://example.com/app.apk?token=x", "HTTP://example.com/app", " https://example.com/app ", "itms-services://?action=download-manifest&url=https://example.com/app.plist", "blob:https://example.com/id", "https://", "https://%", "ftp://example.com/app.apk"} {
+        if !isURLTarget(target) { t.Errorf("URL treated as file: %q", target) }
     }
-    for _, args := range [][]string{{"--url"}, {"--url", ""}, {"--url", "a", "--target", "b"}, {"--android"}, {"--url", "a", "--android", "--ios"}, {"--url", "a", "--help"}, {"--url", "a", "--ios=yes"}, {"--url", "a", "--url", "b"}, {"--target", "a.apk", "--android"}} {
+    for _, target := range []string{"app.apk", "./app with spaces.ipa", "/tmp/app.apk", "~/app.apk", `C:\apps\app.apk`, "C:/apps/app.apk", `\\server\share\app.apk`, "build:debug.apk", "./cache/https://app.apk"} {
+        if isURLTarget(target) { t.Errorf("File treated as URL: %q", target) }
+    }
+    if _, err := parse([]string{"--url", "https://example.com/app.apk"}); err == nil || !strings.Contains(err.Error(), "--target") { t.Fatalf("Missing migration hint: %v", err) }
+    for _, target := range []string{"https://", "blob:https://example.com/id", "ftp://example.com/app.apk"} {
+        err := testApp(t).execute([]string{"--target", target})
+        if err == nil || strings.Contains(err.Error(), "regular file") { t.Fatalf("Wrong URL error for %q: %v", target, err) }
+    }
+}
+
+func TestURLArguments(t *testing.T) {
+    for _, args := range [][]string{{"--target", "https://example.com/app", "--android", "--device", "serial"}, {"--target=https://example.com/app", "--ios"}} {
+        got, err := parse(args)
+        if err != nil || got.target != "https://example.com/app" || got.platform == "" { t.Fatalf("%+v %v", got, err) }
+    }
+    for _, args := range [][]string{{"--target"}, {"--target", ""}, {"--url", "https://example.com/app"}, {"--android"}, {"--target", "a", "--android", "--ios"}, {"--target", "a", "--help"}, {"--target", "a", "--ios=yes"}, {"--target", "a", "--target", "b"}, {"--target", "a.apk", "--android"}} {
         if _, err := parse(args); err == nil { t.Fatalf("Accepted %v", args) }
     }
     if similar("--andriod") != "--android" { t.Fatal("Missing suggestion") }
@@ -146,7 +160,7 @@ func TestURLUsesExistingInstallAndCleansUp(t *testing.T) {
         if _, err := os.Stat(downloaded); err != nil { t.Fatal(err) }
         return "", errors.New("fixture installation failure")
     }
-    if err := a.execute([]string{"--url", server.URL, "--device", "serial"}); err == nil { t.Fatal("Failure swallowed") }
+    if err := a.execute([]string{"--target", server.URL, "--device", "serial"}); err == nil { t.Fatal("Failure swallowed") }
     if downloaded == "" { t.Fatal("Install not called") }
     if _, err := os.Stat(downloaded); !os.IsNotExist(err) { t.Fatal("Download leaked on installation failure") }
 }
@@ -196,8 +210,8 @@ func TestStoreLinks(t *testing.T) {
         called = true
         return storeOutput, nil
     }
-    if err := a.execute([]string{"--url", "https://play.google.com/store/apps/details?id=com.example.app"}); err != nil { t.Fatal(err) }
+    if err := a.execute([]string{"--target", "https://play.google.com/store/apps/details?id=com.example.app"}); err != nil { t.Fatal(err) }
     if !called || strings.Contains(a.out.(*bytes.Buffer).String(), "Installed successfully") { t.Fatal("Store status is incorrect") }
     storeOutput = "Starting: Intent"
-    if err := a.execute([]string{"--url", "https://play.google.com/store/apps/details?id=com.example.app"}); err == nil { t.Fatal("Unconfirmed store launch reported as success") }
+    if err := a.execute([]string{"--target", "https://play.google.com/store/apps/details?id=com.example.app"}); err == nil { t.Fatal("Unconfirmed store launch reported as success") }
 }

@@ -48,6 +48,15 @@ func (a *app) resolveURL(raw, platform string) (urlSource, error) {
     return r.resolve(raw, "", 0)
 }
 
+// Keep Windows drive paths and local names containing a colon on the file path.
+func isURLTarget(raw string) bool {
+    value := strings.ToLower(strings.TrimSpace(raw))
+    if len(value) >= 2 && value[1] == ':' { return false }
+    parsed, err := url.Parse(value)
+    return (err == nil && len(parsed.Scheme) > 1 && strings.HasPrefix(value, parsed.Scheme+"://")) || strings.HasPrefix(value, "http:") ||
+        strings.HasPrefix(value, "https:") || strings.HasPrefix(value, "itms-services:") || strings.HasPrefix(value, "blob:")
+}
+
 func parseSourceURL(raw string) (*url.URL, error) {
     u, err := url.Parse(strings.TrimSpace(raw))
     if err != nil { return nil, errors.New("Invalid URL") }
@@ -225,7 +234,7 @@ func storePlatform(u *url.URL) string {
 
 func (a *app) openStore(source urlSource, id string) error {
     if source.platform == "ios" {
-        return errors.New("App Store links do not provide a downloadable signed IPA. Open this app's page in App Store on the iPhone/iPad to install; for Ferrie installation, obtain a signed IPA and use --target PATH or --url DIRECT_IPA_URL")
+        return errors.New("App Store links do not provide a downloadable signed IPA. Open this app's page in App Store on the iPhone/iPad to install; for Ferrie installation, obtain a signed IPA and use --target PATH_OR_DIRECT_IPA_URL")
     }
     u, _ := url.Parse(source.store)
     packageID := u.Query().Get("id")

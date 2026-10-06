@@ -3,11 +3,7 @@
 ferrie \- install Android and iOS apps on connected devices
 .SH SYNOPSIS
 .B ferrie \-\-target
-.I PATH
-.RB [ \-\-device " ID"]
-.br
-.B ferrie \-\-url
-.I URL
+.I PATH_OR_URL
 .RB [ \-\-android " | " \-\-ios ]
 .RB [ \-\-device " ID"]
 .br
@@ -29,10 +25,9 @@ Non-interactive sessions must select a device with
 when more than one compatible device is connected.
 .SH OPTIONS
 .TP
-.BR \-T ", " \-\-target " PATH"
-Install a local APK, APKS, AAB or IPA package. Quote paths containing spaces.
-.TP
-.B \-\-url URL
+.BR \-T ", " \-\-target " PATH_OR_URL"
+Automatically detect a local APK, APKS, AAB or IPA path or a URL.
+Quote paths containing spaces and URLs containing shell special characters.
 Download a direct package URL or resolve a supported installation page.
 Public Pgyer pages and combined Android/iOS pages are supported.
 Combined pages may require a platform selection.
@@ -81,8 +76,8 @@ Help, version output and completion do not download tools.
 ferrie \-\-list
 ferrie \-\-target "build/My App.apk"
 ferrie \-\-target app.ipa \-\-device DEVICE_ID
-ferrie \-\-url https://example.com/app.apk \-\-android
-ferrie \-\-url https://www.pgyer.com/clobotics-rea-test \-\-android
+ferrie \-\-target https://example.com/app.apk \-\-android
+ferrie \-\-target https://www.pgyer.com/clobotics-rea-test \-\-android
 .fi
 .SH FILES
 .TP

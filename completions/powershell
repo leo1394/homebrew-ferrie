@@ -6,6 +6,7 @@ Register-ArgumentCompleter -Native -CommandName ferrie,ferrie.exe -ScriptBlock {
     } else { $elements[-1].Extent.Text }
     if ($previous -in @('--target', '-T')) {
         $prefix = $wordToComplete.Trim("'", '"')
+        if ($prefix -match '^(?i:https?://|itms-services:|blob:)') { return }
         $parent = if ($prefix) { Split-Path -Path $prefix -Parent } else { '.' }
         if (-not $parent) { $parent = '.' }
         $leaf = if ($prefix) { Split-Path -Path $prefix -Leaf } else { '' }
@@ -16,14 +17,12 @@ Register-ArgumentCompleter -Native -CommandName ferrie,ferrie.exe -ScriptBlock {
             $quoted = "'" + $path.Replace("'", "''") + "'"
             [System.Management.Automation.CompletionResult]::new($quoted, $_.Name, 'ProviderItem', $path)
         }
-    } elseif ($previous -eq '--url') {
-        return
     } elseif ($previous -in @('--device', '-d')) {
         ferrie __devices 2>$null | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
         }
     } else {
-        '--target','--url','--android','--ios','--list','--device','--help','version','--version' | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
+        '--target','--android','--ios','--list','--device','--help','version','--version' | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterName', $_)
         }
     }

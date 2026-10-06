@@ -19,22 +19,21 @@ const version = "0.2.1"
 const versionDate = "2026-09-07"
 const repositoryURL = "https://github.com/leo1394/homebrew-ferrie"
 
-var options = []string{"--target", "--url", "--android", "--ios", "--list", "--device", "--help", "version", "--version"}
+var options = []string{"--target", "--android", "--ios", "--list", "--device", "--help", "version", "--version"}
 
 const help = `Ferrie — install Android/iOS apps on connected devices.
 
 Usage:
-  ferrie --target PATH [--device ID]
-  ferrie --url URL [--android | --ios] [--device ID]
+  ferrie --target PATH_OR_URL [--android | --ios] [--device ID]
   ferrie --list
   ferrie --help
   ferrie version | --version
 
 Options:
-  -T, --target PATH  Install an APK, APKS, AAB or IPA
-      --url URL     Download a package or resolve an installation page
-      --android     Choose Android for --url
-      --ios         Choose iOS for --url
+  -T, --target PATH_OR_URL
+                    Install a local package or download from a URL
+      --android     Choose Android for a URL target
+      --ios         Choose iOS for a URL target
   -d, --device ID    Select this exact device ID
   -l, --list         List connected Android and iOS devices
   -h, --help         Show help
@@ -50,7 +49,7 @@ AAB/APKS additionally use a managed Java runtime and bundletool.
 `
 
 type arguments struct {
-    target, device, action, url, platform string
+    target, device, action, platform string
 }
 
 type usageError struct { message string }
@@ -69,7 +68,7 @@ func parse(args []string) (arguments, error) {
         case "-v", "version": key = "--version"
         }
         switch key {
-        case "--target", "--device", "--url":
+        case "--target", "--device":
             if !inline {
                 if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
                     return result, usageError{key + " requires a value"}
@@ -80,7 +79,6 @@ func parse(args []string) (arguments, error) {
             if strings.TrimSpace(value) == "" { return result, usageError{key + " requires a non-empty value"} }
             switch key {
             case "--target": result.target = value
-            case "--url": result.url = value
             case "--device": result.device = value
             }
         case "--android", "--ios":
@@ -91,6 +89,8 @@ func parse(args []string) (arguments, error) {
             if inline { return result, usageError{key + " does not take a value"} }
             if result.action != "" { return result, usageError{"Choose only one action"} }
             result.action = key
+        case "--url":
+            return result, usageError{"--url has been replaced by --target; use --target URL"}
         default:
             message := "Unknown argument: " + key
             if suggestion := similar(key); suggestion != "" { message += "\nDid you mean '" + suggestion + "'?" }
@@ -99,11 +99,10 @@ func parse(args []string) (arguments, error) {
         if seen[key] { return result, usageError{"Repeated argument: " + key} }
         seen[key] = true
     }
-    if result.action == "" && result.target == "" && result.url == "" { return result, usageError{"Use --target PATH, --url URL or --list; see ferrie --help"} }
-    if result.action != "" && (result.target != "" || result.url != "" || result.platform != "" || result.device != "") { return result, usageError{"Do not combine --list/--help/--version with installation arguments"} }
-    if result.target != "" && result.url != "" { return result, usageError{"Choose only one of --target and --url"} }
-    if result.platform != "" && result.url == "" { return result, usageError{"--android/--ios requires --url"} }
-    if result.device != "" && result.target == "" && result.url == "" { return result, usageError{"--device requires --target or --url"} }
+    if result.action == "" && result.target == "" { return result, usageError{"Use --target PATH_OR_URL or --list; see ferrie --help"} }
+    if result.action != "" && (result.target != "" || result.platform != "" || result.device != "") { return result, usageError{"Do not combine --list/--help/--version with installation arguments"} }
+    if result.platform != "" && !isURLTarget(result.target) { return result, usageError{"--android/--ios requires a URL in --target"} }
+    if result.device != "" && result.target == "" { return result, usageError{"--device requires --target"} }
     return result, nil
 }
 
@@ -192,8 +191,8 @@ func (a *app) execute(args []string) error {
         a.printDevices(devices)
         return err
     }
-    if parsed.url != "" {
-        source, err := a.resolveURL(parsed.url, parsed.platform)
+    if isURLTarget(parsed.target) {
+        source, err := a.resolveURL(parsed.target, parsed.platform)
         if err != nil { return err }
         defer source.cleanup()
         if source.store != "" { return a.openStore(source, parsed.device) }

@@ -125,10 +125,10 @@ The original script is retained at [legacy/install-app.sh](../legacy/install-app
 ## URL installation
 
 ```sh
-ferrie --url "https://example.com/app.apk"
-ferrie --url "https://www.pgyer.com/3ceb0fd1d20e97fa0310d802323c07c8" --android
-ferrie --url "https://www.pgyer.com/clobotics-rea-test" --ios --device UDID
-ferrie --url "https://play.google.com/store/apps/details?id=com.example.app" --device SERIAL
+ferrie --target "https://example.com/app.apk"
+ferrie --target "https://www.pgyer.com/3ceb0fd1d20e97fa0310d802323c07c8" --android
+ferrie --target "https://www.pgyer.com/clobotics-rea-test" --ios --device UDID
+ferrie --target "https://play.google.com/store/apps/details?id=com.example.app" --device SERIAL
 ```
 
 - **Direct downloads:** HTTP(S), relative redirects, session cookies and extensionless URLs are supported. ZIP contents determine APK / APKS / AAB / IPA type; URL extensions and server filenames are not trusted. Ferrie tries updating first. Only after failure and detection of the same applicationId / bundleId does it ask for permission to uninstall/reinstall, warning that local data will be deleted.
@@ -139,7 +139,7 @@ ferrie --url "https://play.google.com/store/apps/details?id=com.example.app" --d
 - **App Store:** app links are not IPA download URLs. Ferrie recognizes the link and returns an explanation. Install through App Store on the device, or provide a signed IPA suitable for the device.
 - **Browser blob URLs:** literal `blob:` URLs exist only in their browser session. Supply the underlying HTTP(S) URL or a saved local package.
 
-Downloads require no extra tools. Limits: 15 minutes per request, 12 page/redirect hops, 2 MiB per page and 8 GiB per package. Packages are stored in the system temporary directory and removed after normal completion, download failure or installation failure. Forced termination or shutdown can leave `ferrie-download-*` directories for manual cleanup. Download logs omit URL query parameters. `--url=URL` is supported; quote URLs. `--android` / `--ios` require `--url` and are mutually exclusive.
+Downloads require no extra tools. Limits: 15 minutes per request, 12 page/redirect hops, 2 MiB per page and 8 GiB per package. Packages are stored in the system temporary directory and removed after normal completion, download failure or installation failure. Forced termination or shutdown can leave `ferrie-download-*` directories for manual cleanup. Download logs omit URL query parameters. `--target=URL` is supported; quote URLs. `--android` / `--ios` require a URL in `--target` and are mutually exclusive.
 
 Protocol references: [Pgyer installation API](https://www.pgyer.com/doc/en/view/api_install), [Google Play links](https://developer.android.com/distribute/marketing-tools/linking-to-google-play).
 

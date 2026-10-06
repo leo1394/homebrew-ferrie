@@ -3,8 +3,7 @@ _ferrie() {
     local -a devices
     devices=("${(@f)$(ferrie __devices 2>/dev/null)}")
     _arguments \
-        '(-T --target)'{-T,--target}'[App package]:package:_files' \
-        '--url[Package or installation page URL]:URL:' \
+        '(-T --target)'{-T,--target}'[App package path or URL]:package:_files' \
         '(--ios)--android[Choose Android]' \
         '(--android)--ios[Choose iOS]' \
         '(-d --device)'{-d,--device}'[Device ID]:device:($devices)' \

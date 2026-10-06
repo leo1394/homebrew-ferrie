@@ -94,13 +94,13 @@ ferrie --target ./app.apk --device SERIAL
 
 ```sh
 # 直接下载链接：自动识别 APK、APKS、AAB、IPA
-ferrie --url "https://example.com/download/app.apk"
+ferrie --target "https://example.com/download/app.apk"
 
 # 蒲公英合并页：交互选择 Android / iOS
-ferrie --url "https://www.pgyer.com/clobotics-rea-test"
+ferrie --target "https://www.pgyer.com/clobotics-rea-test"
 
 # 预先指定平台和设备
-ferrie --url "https://www.pgyer.com/clobotics-rea-test" --android --device SERIAL
+ferrie --target "https://www.pgyer.com/clobotics-rea-test" --android --device SERIAL
 ```
 
 | 链接类型 | 行为 |
@@ -111,7 +111,7 @@ ferrie --url "https://www.pgyer.com/clobotics-rea-test" --android --device SERIA
 | Google Play 应用链接 | 在指定 Android 设备打开商店详情页，安装由用户在设备上完成 |
 | App Store 应用链接 | 识别并说明限制；请在设备的 App Store 安装，或提供已签名 IPA |
 
-`--url` 与 `--target` 二选一。包含 `&` 等字符的 URL 请加引号。下载使用 Ferrie 内置能力，不增加运行时依赖，临时包在安装结束或失败后删除。需要登录、密码、验证码或复杂 JavaScript 的页面，请先在浏览器下载，再使用 `--target`。详情见[链接安装](docs/usage.md#链接安装)。
+`--target` 自动识别本地路径或 URL。包含 `&` 等字符的 URL 请加引号。下载使用 Ferrie 内置能力，不增加运行时依赖，临时包在安装结束或失败后删除。需要登录、密码、验证码或复杂 JavaScript 的页面，请先在浏览器下载，再使用 `--target`。详情见[链接安装](docs/usage.md#链接安装)。
 
 ## 常用命令
 
@@ -121,8 +121,8 @@ ferrie --url "https://www.pgyer.com/clobotics-rea-test" --android --device SERIA
 | 安装 IPA | `ferrie --target ./app.ipa` |
 | 从 AAB 生成并安装 | `ferrie --target ./app.aab` |
 | 安装 APKS | `ferrie --target ./app.apks` |
-| 从链接安装 | `ferrie --url "https://example.com/app.apk"` |
-| 选择合并页中的 Android 包 | `ferrie --url "https://www.pgyer.com/clobotics-rea-test" --android` |
+| 从链接安装 | `ferrie --target "https://example.com/app.apk"` |
+| 选择合并页中的 Android 包 | `ferrie --target "https://www.pgyer.com/clobotics-rea-test" --android` |
 | 列出连接的设备 | `ferrie --list` |
 | 安装到指定设备 | `ferrie --target ./app.apk --device SERIAL` |
 | 查看帮助 | `ferrie --help` |

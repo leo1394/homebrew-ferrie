@@ -3,14 +3,14 @@ _ferrie() {
     COMPREPLY=()
     case "$prev" in
         --target|-T)
+            case "$cur" in *://*|blob:*|itms-services:*) return ;; esac
             while IFS= read -r item; do COMPREPLY+=("$item"); done < <(compgen -f -- "$cur")
             compopt -o filenames 2>/dev/null || true
             return ;;
-        --url) return ;;
         --device|-d)
             while IFS= read -r item; do if [[ "$item" == "$cur"* ]]; then COMPREPLY+=("$item"); fi; done < <(ferrie __devices 2>/dev/null)
             return ;;
     esac
-    COMPREPLY=( $(compgen -W '--target --url --android --ios --list --device --help version --version' -- "$cur") )
+    COMPREPLY=( $(compgen -W '--target --android --ios --list --device --help version --version' -- "$cur") )
 }
 complete -o filenames -F _ferrie ferrie

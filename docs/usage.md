@@ -125,10 +125,10 @@ Windows 先运行 `go build -o bin/ferrie.exe .`，再运行 `./tests/windows_te
 ## 链接安装
 
 ```sh
-ferrie --url "https://example.com/app.apk"
-ferrie --url "https://www.pgyer.com/3ceb0fd1d20e97fa0310d802323c07c8" --android
-ferrie --url "https://www.pgyer.com/clobotics-rea-test" --ios --device UDID
-ferrie --url "https://play.google.com/store/apps/details?id=com.example.app" --device SERIAL
+ferrie --target "https://example.com/app.apk"
+ferrie --target "https://www.pgyer.com/3ceb0fd1d20e97fa0310d802323c07c8" --android
+ferrie --target "https://www.pgyer.com/clobotics-rea-test" --ios --device UDID
+ferrie --target "https://play.google.com/store/apps/details?id=com.example.app" --device SERIAL
 ```
 
 - **直链**：支持 HTTP(S)、相对重定向、下载会话 Cookie，以及无文件扩展名的下载地址。依据 ZIP 内部结构识别 APK / APKS / AAB / IPA，不信任 URL 后缀或服务器文件名。优先直接覆盖安装；仅在失败且存在同 applicationId / bundleId 应用时，询问是否卸载重装并提示本地数据丢失风险。
@@ -139,7 +139,7 @@ ferrie --url "https://play.google.com/store/apps/details?id=com.example.app" --d
 - **App Store**：应用链接无法作为 IPA 直链使用。Ferrie 识别链接后返回说明，请在目标设备的 App Store 安装；需要通过电脑安装时，提供适用于设备的已签名 IPA。
 - **浏览器 blob 地址**：字面 `blob:` URL 仅存在于浏览器会话中。请提供它对应的 HTTP(S) 地址或保存后的本地包。
 
-下载无需新增工具。每个请求超时 15 分钟，最多 12 层页面 / 重定向，网页上限 2 MiB，安装包上限 8 GiB。包存入系统临时目录，在正常结束、下载失败或安装失败后删除；强制结束进程或关机可能留下 `ferrie-download-*` 临时目录，可手动清理。下载日志不输出 URL 查询参数。URL 支持 `--url=URL`，建议加引号；`--android` / `--ios` 只用于 `--url`，且不能同时使用。
+下载无需新增工具。每个请求超时 15 分钟，最多 12 层页面 / 重定向，网页上限 2 MiB，安装包上限 8 GiB。包存入系统临时目录，在正常结束、下载失败或安装失败后删除；强制结束进程或关机可能留下 `ferrie-download-*` 临时目录，可手动清理。下载日志不输出 URL 查询参数。URL 支持 `--target=URL`，建议加引号；`--android` / `--ios` 只用于 URL 类型的 `--target`，且不能同时使用。
 
 协议参考：[蒲公英安装接口说明](https://www.pgyer.com/doc/en/view/api_install)、[Google Play 应用链接](https://developer.android.com/distribute/marketing-tools/linking-to-google-play)。
 

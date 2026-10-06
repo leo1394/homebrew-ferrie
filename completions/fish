@@ -1,6 +1,5 @@
 complete -c ferrie -f
-complete -c ferrie -l target -s T -r -F -d 'App package'
-complete -c ferrie -l url -r -d 'Package or installation page URL'
+complete -c ferrie -l target -s T -r -F -d 'App package path or URL'
 complete -c ferrie -l android -d 'Choose Android'
 complete -c ferrie -l ios -d 'Choose iOS'
 complete -c ferrie -l device -s d -r -a '(ferrie __devices 2>/dev/null)' -d 'Device ID'

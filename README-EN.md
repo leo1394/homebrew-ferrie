@@ -95,13 +95,13 @@ Only devices matching the package platform are considered. `--list` uses existin
 
 ```sh
 # Direct download: detects APK, APKS, AAB and IPA archives
-ferrie --url "https://example.com/download/app.apk"
+ferrie --target "https://example.com/download/app.apk"
 
 # Pgyer merged page: choose Android or iOS interactively
-ferrie --url "https://www.pgyer.com/clobotics-rea-test"
+ferrie --target "https://www.pgyer.com/clobotics-rea-test"
 
 # Select a platform and device in advance
-ferrie --url "https://www.pgyer.com/clobotics-rea-test" --android --device SERIAL
+ferrie --target "https://www.pgyer.com/clobotics-rea-test" --android --device SERIAL
 ```
 
 | Link type | Behavior |
@@ -112,7 +112,7 @@ ferrie --url "https://www.pgyer.com/clobotics-rea-test" --android --device SERIA
 | Google Play app link | Open the listing on the selected Android device; complete installation on the device |
 | App Store app link | Recognize the link and explain the limitation; install through App Store or provide a signed IPA |
 
-Use either `--url` or `--target`. Quote URLs containing characters such as `&`. Downloads use built-in functionality with no additional runtime dependencies. Temporary packages are removed after success or failure. For pages requiring login, passwords, CAPTCHA or complex JavaScript, download in a browser and use `--target`. See [URL installation](docs/usage-en.md#url-installation).
+`--target` automatically detects local paths and URLs. Quote URLs containing characters such as `&`. Downloads use built-in functionality with no additional runtime dependencies. Temporary packages are removed after success or failure. For pages requiring login, passwords, CAPTCHA or complex JavaScript, download in a browser and use `--target`. See [URL installation](docs/usage-en.md#url-installation).
 
 ## Daily commands
 
@@ -122,8 +122,8 @@ Use either `--url` or `--target`. Quote URLs containing characters such as `&`. 
 | Install an IPA | `ferrie --target ./app.ipa` |
 | Install an APKS archive | `ferrie --target ./app.apks` |
 | Build and install from an AAB | `ferrie --target ./app.aab` |
-| Install from a URL | `ferrie --url "https://example.com/app.apk"` |
-| Select Android from a merged page | `ferrie --url "https://www.pgyer.com/clobotics-rea-test" --android` |
+| Install from a URL | `ferrie --target "https://example.com/app.apk"` |
+| Select Android from a merged page | `ferrie --target "https://www.pgyer.com/clobotics-rea-test" --android` |
 | List connected devices | `ferrie --list` |
 | Install on a specific device | `ferrie --target ./app.apk --device SERIAL` |
 | Show help | `ferrie --help` |

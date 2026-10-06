@@ -26,12 +26,12 @@ _ferrie
 [[ "${COMPREPLY[*]}" == 'serial-2' ]]
 COMP_WORDS=(ferrie --ur)
 COMP_CWORD=1
-_ferrie
-[[ "${COMPREPLY[*]}" == '--url' ]]
+_ferrie || true
+[[ "${#COMPREPLY[@]}" == 0 ]]
 COMP_WORDS=(ferrie --and)
 _ferrie
 [[ "${COMPREPLY[*]}" == '--android' ]]
-COMP_WORDS=(ferrie --url 'app')
+COMP_WORDS=(ferrie --target 'https://example.com/app')
 COMP_CWORD=2
 _ferrie
 [[ "${#COMPREPLY[@]}" == 0 ]]
