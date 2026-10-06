@@ -6,7 +6,7 @@ $oldPath = $env:Path
 try {
     & (Join-Path $root 'install.ps1') -Local -InstallDir $destination
     $version = @(& (Join-Path $destination 'ferrie.exe') --version)
-    if ($LASTEXITCODE -ne 0 -or $version.Count -ne 2 -or $version[0] -ne 'ferrie version 0.2.1 (2026-09-07)' -or $version[1] -ne 'https://github.com/leo1394/homebrew-ferrie') { throw 'Windows launcher failed' }
+    if ($LASTEXITCODE -ne 0 -or $version.Count -ne 2 -or $version[0] -ne 'ferrie version 0.2.2 (2026-10-06)' -or $version[1] -ne 'https://github.com/leo1394/homebrew-ferrie') { throw 'Windows launcher failed' }
     . (Join-Path $destination 'ferrie-completion.ps1')
     $result = [System.Management.Automation.CommandCompletion]::CompleteInput('ferrie --tar', 11, $null)
     if ('--target' -notin $result.CompletionMatches.CompletionText) { throw 'Option completion failed' }

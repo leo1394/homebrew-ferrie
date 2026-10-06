@@ -15,8 +15,8 @@ import (
     "time"
 )
 
-const version = "0.2.1"
-const versionDate = "2026-09-07"
+const version = "0.2.2"
+const versionDate = "2026-10-06"
 const repositoryURL = "https://github.com/leo1394/homebrew-ferrie"
 
 var options = []string{"--target", "--android", "--ios", "--list", "--device", "--help", "version", "--version"}
