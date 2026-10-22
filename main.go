@@ -205,6 +205,7 @@ func (a *app) execute(args []string) error {
     sourceURL := ""
     if isURLTarget(parsed.target) {
         sourceURL = parsed.target
+        if err := a.prepareURLPlatform(&parsed); err != nil { return err }
         source, err := a.resolveURL(parsed.target, parsed.platform)
         if err != nil { return err }
         defer source.cleanup()

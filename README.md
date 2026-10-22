@@ -92,6 +92,8 @@ ferrie --target ./app.apk --device SERIAL
 
 ## 从链接安装
 
+蒲公英链接会在首次请求前按连接设备或 `--device ID` 确定 Android / iOS，再跟随平台对应的页面跳转下载 APK / IPA。只有一台设备时无需额外传入平台参数；多个设备且未指定平台时先选择设备。也可使用 `--android` / `--ios` 预选平台。
+
 ```sh
 # 直接下载链接：自动识别 APK、APKS、AAB、IPA
 ferrie --target "https://example.com/download/app.apk"

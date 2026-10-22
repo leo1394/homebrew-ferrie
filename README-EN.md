@@ -93,6 +93,8 @@ Only devices matching the package platform are considered. `--list` uses existin
 
 ## Install from a URL
 
+For Pgyer links, Ferrie determines Android/iOS from the connected device or `--device ID` before the first request, then follows platform-specific redirects to download the APK/IPA. A single device needs no platform flag; with multiple devices and no platform flag, select a device first. You can also preselect with `--android` / `--ios`.
+
 ```sh
 # Direct download: detects APK, APKS, AAB and IPA archives
 ferrie --target "https://example.com/download/app.apk"

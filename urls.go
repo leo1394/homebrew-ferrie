@@ -9,6 +9,7 @@ import (
     "fmt"
     "html"
     "io"
+    "net"
     "net/http"
     "net/http/cookiejar"
     "net/url"
@@ -36,6 +37,27 @@ type urlResolver struct {
     client *http.Client
     platform string
     seen map[string]bool
+}
+
+// Pgyer chooses a build (and may redirect) on the very first HTTP request.
+// Resolve the installation device before sending its mobile User-Agent.
+func (a *app) prepareURLPlatform(parsed *arguments) error {
+    target, err := parseSourceURL(parsed.target)
+    if err != nil || !isPgyer(target) || parsed.downloadDir != "" { return nil }
+    if parsed.platform != "" && parsed.device == "" { return nil }
+    devices, err := a.discover("", false, true)
+    if err != nil { return err }
+    if len(devices) == 0 && parsed.device == "" {
+        parsed.platform, err = a.selectPlatform()
+        return err
+    }
+    selected, err := a.selectDevice(devices, parsed.device)
+    if err != nil { return err }
+    if parsed.platform != "" && parsed.platform != selected.platform {
+        return fmt.Errorf("Device platform %s does not match --%s", selected.platform, parsed.platform)
+    }
+    parsed.platform, parsed.device = selected.platform, selected.id
+    return nil
 }
 
 func (a *app) resolveURL(raw, platform string) (urlSource, error) {
@@ -96,7 +118,11 @@ func (r *urlResolver) resolve(raw, referer string, depth int) (urlSource, error)
     resp, err := r.client.Do(req)
     if err != nil {
         if r.app.ctx.Err() != nil { return empty, r.app.ctx.Err() }
-        return empty, fmt.Errorf("Could not download from %s; check the network or obtain a fresh download link", u.Hostname())
+        reason := "network request failed"
+        var networkError net.Error
+        if errors.As(err, &networkError) && networkError.Timeout() { reason = "network timeout" }
+        if strings.Contains(err.Error(), "TLS handshake timeout") { reason = "TLS handshake timeout" }
+        return empty, fmt.Errorf("Could not download from %s: %s; check the network or obtain a fresh download link", u.Hostname(), reason)
     }
     defer resp.Body.Close()
     if resp.StatusCode >= 300 && resp.StatusCode < 400 {
@@ -183,7 +209,9 @@ func (r *urlResolver) savePackage(body io.Reader, length int64, host string) (ur
     file, err := os.Create(path)
     if err != nil { return empty, err }
     fmt.Fprintf(r.app.out, "Downloading app package from %s...\n", host)
-    size, copyErr := io.Copy(file, io.LimitReader(body, maxPackageBytes+1))
+    progress := newDownloadProgress(r.app.out, length)
+    size, copyErr := io.Copy(io.MultiWriter(file, progress), io.LimitReader(body, maxPackageBytes+1))
+    progress.finish()
     closeErr := file.Close()
     if copyErr != nil { return empty, errors.New("Package download interrupted; retry with a fresh link") }
     if closeErr != nil { return empty, closeErr }
