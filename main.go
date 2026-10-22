@@ -164,6 +164,14 @@ func commandRunner(out, errOut io.Writer) runner {
     return func(ctx context.Context, capture bool, name string, args ...string) (string, error) {
         cmd := exec.CommandContext(ctx, name, args...)
         var stdout, stderr strings.Builder
+        if !capture && len(args) == 3 && args[0] == "install" && strings.HasPrefix(args[1], "--path=") && strings.HasPrefix(args[2], "--udid=") {
+            progress := newIOSInstallLog(out)
+            cmd.Stdout, cmd.Stderr = progress, progress
+            err := cmd.Run()
+            detail := progress.finish(err != nil)
+            if err != nil { return "", fmt.Errorf("%s: %w %s", filepath.Base(name), err, detail) }
+            return "", nil
+        }
         if capture { cmd.Stdout, cmd.Stderr = &stdout, &stderr } else { cmd.Stdout, cmd.Stderr = out, errOut }
         if err := cmd.Run(); err != nil {
             return "", fmt.Errorf("%s: %w %s", filepath.Base(name), err, strings.TrimSpace(stderr.String()))
