@@ -17,9 +17,11 @@ with tempfile.TemporaryDirectory() as directory:
     adb.chmod(0o755)
     ios = folder / 'ios'
     ios.write_text('#!/bin/sh\nprintf \'{"deviceList":[]}\\n\'\n'); ios.chmod(0o755)
+    xcrun = folder / 'xcrun'
+    xcrun.write_text('#!/bin/sh\nexit 1\n'); xcrun.chmod(0o755)
     url = f'http://127.0.0.1:{server.server_port}/app.apk?token=secret'
     (folder / 'recent-urls.json').write_text(json.dumps([url, url.replace('app.apk', 'other.apk')]))
-    env = dict(os.environ, FERRIE_HOME=directory, FERRIE_ADB=str(adb), FERRIE_IOS=str(ios), TERM='xterm-256color')
+    env = dict(os.environ, FERRIE_HOME=directory, FERRIE_ADB=str(adb), FERRIE_IOS=str(ios), TERM='xterm-256color', PATH=directory+os.pathsep+os.environ.get('PATH', ''))
     env.pop('NO_COLOR', None)
     master, slave = pty.openpty()
     process = subprocess.Popen([str(root/'bin/ferrie'), '--device', 'serial'], stdin=slave, stdout=slave, stderr=slave, env=env)

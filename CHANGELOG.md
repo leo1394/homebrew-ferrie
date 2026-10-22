@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.7 - 2026-10-22
+
+- macOS 复用已有 Xcode 的 CoreDevice，补充 iPhone 无线设备发现与 IPA 安装。
+- 按 UDID 合并去重设备列表，区分已配对与已连接状态，安装前重新验证设备可达性。
+- go-ios 安装失败时先尝试 CoreDevice 覆盖安装，再进入原有卸载确认流程。
+- 更新中英文无线安装说明，增加 CoreDevice 发现、连接校验、安装回退及去重回归测试。
+
 ## 0.2.6 - 2026-10-22
 
 - APK / IPA 下载完成行显示包内版本和构建号，统一为 version+buildNumber 格式。

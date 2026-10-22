@@ -155,6 +155,7 @@ type app struct {
     out, err io.Writer
     interactive bool
     cache string
+    coreDevice string
     run runner
     pickRecent func(context.Context, *os.File, io.Writer, selector.Prompt, []selector.Candidate) (selector.Candidate, bool, error)
 }
@@ -234,7 +235,12 @@ func (a *app) execute(args []string) error {
     }
     if parsed.platform != "" && parsed.platform != kind { return fmt.Errorf("Package type %s does not match --%s", kind, parsed.platform) }
     required := []string{"adb"}
-    if kind == "ios" { required = []string{"ios"} } else if !strings.EqualFold(filepath.Ext(target), ".apk") { required = append(required, "java", "bundletool") }
+    if kind == "ios" {
+        required = []string{"ios"}
+        if a.coreDevice != "" {
+            if found, err := a.coreDevices(); err == nil && len(found) > 0 { required = nil }
+        }
+    } else if !strings.EqualFold(filepath.Ext(target), ".apk") { required = append(required, "java", "bundletool") }
     if err := a.prepare(required...); err != nil { return err }
     devices, err := a.discoverForInstall(kind, parsed.device)
     if err != nil { return err }
@@ -267,14 +273,15 @@ func (a *app) selectDevice(devices []device, id string) (device, error) {
             index, err := strconv.Atoi(answer)
             if err != nil || index < 1 || index > len(devices) { return selected, errors.New("Invalid device selection") }
             selected = devices[index-1]
-            if err := ready(selected); err != nil { return selected, err }
+            if err := a.checkReady(&selected); err != nil { return selected, err }
             fmt.Fprintf(a.out, "Install on %s? [y/N]: ", selected.id)
             answer, err = a.readLine()
             answer = strings.ToLower(strings.TrimSpace(answer))
             if err != nil || (answer != "y" && answer != "yes") { return selected, errors.New("Installation cancelled") }
         }
     }
-    return selected, ready(selected)
+    err := a.checkReady(&selected)
+    return selected, err
 }
 
 func ready(d device) error {
@@ -292,7 +299,7 @@ func main() {
     stat, _ := os.Stdin.Stat()
     a := app{ctx: ctx, in: os.Stdin, out: os.Stdout, err: os.Stderr,
              interactive: stat != nil && stat.Mode()&os.ModeCharDevice != 0,
-             cache: cache, run: commandRunner(os.Stdout, os.Stderr)}
+             cache: cache, coreDevice: coreDeviceTool(), run: commandRunner(os.Stdout, os.Stderr)}
     // Stop even while waiting for interactive input.
     go func() { <-ctx.Done(); time.Sleep(100*time.Millisecond); os.Exit(130) }()
     if err := a.execute(os.Args[1:]); err != nil {

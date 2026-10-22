@@ -162,7 +162,7 @@ Download and install these tools? [y/N]:
 | Package | Tools used |
 | --- | --- |
 | APK | adb |
-| IPA | go-ios |
+| IPA | go-ios; macOS can also use CoreDevice from an existing Xcode installation |
 | AAB / APKS | adb, Java 17+, bundletool |
 
 Approved downloads go into `~/.ferrie`, without administrator access or changes to the system PATH. **Java and bundletool are required only for AAB / APKS.** Device listing, help, version output, and completion never download tools.
@@ -199,3 +199,9 @@ On Windows, use `go build -o bin/ferrie.exe .`. To install a local build, run `b
 ## License
 
 [MIT](LICENSE)
+
+### Wireless iPhone installation
+
+Trust and pair the iPhone over USB first, enable its network connection in Xcode, and keep the iPhone and Mac on a mutually reachable network. Unlock the phone, then use the same `--target URL --device UDID` command.
+
+Ferrie prefers go-ios. On macOS, an existing Xcode installation also provides CoreDevice discovery and installation without another runtime. A `paired` entry in `--list` is not proof of reachability: Ferrie checks the connection before installing. CoreDevice performs an update and never automatically uninstalls an app after failure. Windows / Linux continue to use go-ios and require the device to be discoverable and reachable through it.

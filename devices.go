@@ -11,7 +11,7 @@ import (
     "time"
 )
 
-type device struct { platform, id, state, name string }
+type device struct { platform, id, state, name, backend string }
 
 func parseADB(output string) []device {
     var result []device
@@ -36,6 +36,8 @@ func parseIOS(output string) ([]device, error) {
 func (a *app) discover(kind string, bootstrap, quiet bool) ([]device, error) {
     var devices []device
     var failures []error
+    var core []device
+    if kind != "android" && a.coreDevice != "" { core, _ = a.coreDevices() }
     for _, backend := range []string{"android", "ios"} {
         if kind != "" && kind != backend { continue }
         name := "adb"
@@ -43,6 +45,7 @@ func (a *app) discover(kind string, bootstrap, quiet bool) ([]device, error) {
         if backend == "ios" { name, args = "ios", []string{"list"} }
         tool, err := a.tool(name, bootstrap)
         if err == nil && tool == "" {
+            if backend == "ios" && len(core) > 0 { continue }
             if !quiet { fmt.Fprintf(a.err, "Missing %s; run ferrie --target PATH to review and approve required tools.\n", name) }
             continue
         }
@@ -64,6 +67,12 @@ func (a *app) discover(kind string, bootstrap, quiet bool) ([]device, error) {
             if !quiet && kind == "" { fmt.Fprintf(a.err, "Warning: %s discovery unavailable: %v\n", backend, err) }
         }
     }
+    for _, item := range core {
+        duplicate := false
+        for _, found := range devices { if found.platform == "ios" && found.id == item.id { duplicate = true; break } }
+        if !duplicate { devices = append(devices, item) }
+    }
+    if kind == "ios" && len(core) > 0 { return devices, nil }
     if kind != "" || len(failures) == 2 { return devices, errors.Join(failures...) }
     return devices, nil
 }
@@ -76,11 +85,18 @@ func (a *app) printDevices(devices []device) {
 
 func (a *app) install(target string, selected device) error {
     fmt.Fprintf(a.out, "Installing %s on %s (%s)\n", filepath.Base(target), selected.id, selected.platform)
-    if selected.platform == "ios" {
+    if selected.platform == "ios" && selected.backend == "coredevice" {
+        if err := a.installCoreDevice(target, selected); err != nil { return err }
+    } else if selected.platform == "ios" {
         tool, err := a.tool("ios", false)
         if err != nil { return err }
         if err := a.installWithFallback(target, selected, tool, func() error {
             _, err := a.run(a.ctx, false, tool, "install", "--path=" + target, "--udid=" + selected.id)
+            if err != nil && a.ctx.Err() == nil && a.coreDevice != "" {
+                fmt.Fprintln(a.out, "go-ios installation failed; trying Apple CoreDevice before any uninstall...")
+                if fallback := a.installCoreDevice(target, selected); fallback != nil { return errors.Join(err, fallback) }
+                return nil
+            }
             return err
         }); err != nil { return err }
     } else {
@@ -120,7 +136,7 @@ func (a *app) install(target string, selected device) error {
 func (a *app) discoverForInstall(kind, id string) ([]device, error) {
     devices, err := a.discover(kind, false, false)
     if kind == "ios" && err == nil && len(devices) == 0 {
-        return nil, errors.New("No iOS device is reachable through go-ios. Connect via USB, unlock the device and trust this computer, then retry. A remembered device or an unlocked phone alone does not establish a wireless connection")
+        return nil, errors.New("No iOS device is reachable through go-ios. Unlock the device and check wireless pairing on the same network, or connect via USB and trust this computer. A remembered device alone is not a live connection")
     }
     if kind != "android" || (err == nil && !needsADBRecovery(devices, id)) { return devices, err }
     if a.ctx.Err() != nil { return nil, a.ctx.Err() }

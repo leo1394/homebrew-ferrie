@@ -159,7 +159,7 @@ Download and install these tools? [y/N]:
 | 包格式 | 使用的工具 |
 | --- | --- |
 | APK | adb |
-| IPA | go-ios |
+| IPA | go-ios；macOS 可复用已安装 Xcode 的 CoreDevice |
 | AAB / APKS | adb、Java 17+、bundletool |
 
 确认后下载到 `~/.ferrie`，无需管理员权限，也不修改系统 PATH。**Java 和 bundletool 只在 AAB / APKS 场景需要。** 查看列表、帮助、版本及自动补全都不会下载工具。
@@ -196,3 +196,9 @@ Windows 使用 `go build -o bin/ferrie.exe .`。本地安装可运行 `bash inst
 ## License
 
 [MIT](LICENSE)
+
+### iPhone 无线安装
+
+先通过 USB 完成信任与配对，在 Xcode 中启用设备的网络连接，并让 iPhone 与 Mac 处于可互通的网络。解锁手机后，可使用相同的 `--target URL --device UDID` 命令安装。
+
+Ferrie 优先使用 go-ios；macOS 上若已有 Xcode，会补充 CoreDevice 设备发现和安装能力，无需另装运行时。`--list` 中 `paired` 仅表示已配对，安装前还会检查可达性；离线设备不会被当作安装成功。CoreDevice 路径直接覆盖安装，失败时不会自动卸载已有应用。Windows / Linux 仍使用 go-ios，需确保设备能被其发现和访问。
