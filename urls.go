@@ -61,6 +61,7 @@ func (a *app) prepareURLPlatform(parsed *arguments) error {
 }
 
 func (a *app) resolveURL(raw, platform string) (urlSource, error) {
+    fmt.Fprintf(a.out, "==> Fetching downloads for: %s\n", safeLinkLabel(raw))
     jar, _ := cookiejar.New(nil)
     r := urlResolver{app: a, platform: platform, seen: map[string]bool{}, client: &http.Client{
         Jar: jar, Timeout: 15*time.Minute,
@@ -111,6 +112,8 @@ func (r *urlResolver) resolve(raw, referer string, depth int) (urlSource, error)
     if err != nil { return empty, errors.New("Invalid download request") }
     agent := "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120.0 Mobile Safari/537.36"
     if r.platform == "ios" { agent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1" }
+    // Pgyer serves iOS manifests to the system installation service, not Safari.
+    if isPgyer(u) && strings.HasPrefix(u.Path, "/app/plist/") { agent = "itunesstored/1.0" }
     req.Header.Set("User-Agent", agent)
     if previous, err := url.Parse(referer); err == nil && previous.Host == u.Host {
         req.Header.Set("Referer", referer)
@@ -134,6 +137,9 @@ func (r *urlResolver) resolve(raw, referer string, depth int) (urlSource, error)
         return r.resolve(next.String(), u.String(), depth+1)
     }
     if resp.StatusCode != http.StatusOK {
+        if isPgyer(u) && strings.HasPrefix(u.Path, "/app/plist/") {
+            return empty, fmt.Errorf("Pgyer iOS installation manifest returned HTTP %d. Could not retrieve the IPA download manifest. Try again or verify installation in Safari; alternatively use --target with a signed IPA or its direct download URL", resp.StatusCode)
+        }
         return empty, fmt.Errorf("Download from %s returned HTTP %d; the link may be expired, private or require browser verification. Obtain a direct package URL or use --target PATH", u.Hostname(), resp.StatusCode)
     }
     body := bufio.NewReader(resp.Body)
@@ -208,7 +214,6 @@ func (r *urlResolver) savePackage(body io.Reader, length int64, host string) (ur
     path := filepath.Join(dir, "package.download")
     file, err := os.Create(path)
     if err != nil { return empty, err }
-    fmt.Fprintf(r.app.out, "Downloading app package from %s...\n", host)
     progress := newDownloadProgress(r.app.out, length)
     size, copyErr := io.Copy(io.MultiWriter(file, progress), io.LimitReader(body, maxPackageBytes+1))
     progress.finish()
@@ -224,7 +229,7 @@ func (r *urlResolver) savePackage(body io.Reader, length int64, host string) (ur
     target := filepath.Join(dir, "app"+extension)
     if err := os.Rename(path, target); err != nil { return empty, err }
     keep = true
-    fmt.Fprintf(r.app.out, "Downloaded %s package (%d bytes).\n", strings.TrimPrefix(extension, "."), size)
+    progress.complete(strings.ToUpper(strings.TrimPrefix(extension, ".")) + " " + filepath.Base(target))
     return urlSource{path: target, platform: platform}, nil
 }
 

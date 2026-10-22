@@ -235,3 +235,62 @@ func TestDownloadOnlyProducesReusableFileWithoutDeviceAccess(t *testing.T) {
         if _, err := parse(args); err == nil { t.Fatal("invalid download-only arguments accepted") }
     }
 }
+
+func TestPgyerUnavailableIOSManifest(t *testing.T) {
+    original := http.DefaultTransport
+    defer func() { http.DefaultTransport = original }()
+    requests := 0
+    http.DefaultTransport = urlTransport(func(req *http.Request) (*http.Response, error) {
+        requests++
+        response := &http.Response{StatusCode: 200, Header: http.Header{}, Request: req}
+        if strings.HasPrefix(req.URL.Path, "/app/plist/") {
+            response.StatusCode = 404
+            response.Body = io.NopCloser(strings.NewReader("Not found"))
+        } else if strings.HasPrefix(req.URL.Path, "/app/install/") {
+            response.StatusCode = 302
+            response.Header.Set("Location", "itms-services://?action=download-manifest&url=https://www.pgyer.com/app/plist/0123456789abcdef0123456789abcdef/install//s.plist")
+            response.Body = io.NopCloser(strings.NewReader(""))
+        } else {
+            response.Body = io.NopCloser(strings.NewReader("<script>aType='ios';aKey='0123456789abcdef0123456789abcdef';installToken='public';</script>"))
+        }
+        return response, nil
+    })
+    a := testApp(t)
+    err := a.execute([]string{"--target", "https://www.pgyer.com/example", "--ios", "--download-dir", t.TempDir()})
+    if err == nil || !strings.Contains(err.Error(), "iOS installation manifest returned HTTP 404") || requests != 3 { t.Fatalf("%v requests=%d", err, requests) }
+    if strings.Contains(a.out.(*bytes.Buffer).String(), "✔︎") { t.Fatal("Failed download reported as complete") }
+}
+
+func TestPgyerIOSManifestUsesInstallationService(t *testing.T) {
+    original := http.DefaultTransport
+    defer func() { http.DefaultTransport = original }()
+    ipa := appArchive(t, "Payload/Test.app/Info.plist")
+    http.DefaultTransport = urlTransport(func(req *http.Request) (*http.Response, error) {
+        response := &http.Response{StatusCode: 200, Header: http.Header{}, Request: req}
+        body := ""
+        switch {
+        case strings.HasPrefix(req.URL.Path, "/app/plist/"):
+            if req.Header.Get("User-Agent") != "itunesstored/1.0" {
+                response.StatusCode = 404
+                body = "Not found"
+            } else {
+                body = `<plist><dict><key>items</key><array><dict><key>assets</key><array><dict><key>kind</key><string>software-package</string><key>url</key><string>https://cos3.pgyer.com/app.ipa</string></dict></array></dict></array></dict></plist>`
+            }
+        case strings.HasPrefix(req.URL.Path, "/app/install/"):
+            response.StatusCode = 302
+            response.Header.Set("Location", "itms-services://?action=download-manifest&url=https://www.pgyer.com/app/plist/0123456789abcdef0123456789abcdef/install//s.plist")
+        case req.URL.Hostname() == "cos3.pgyer.com":
+            body = string(ipa)
+        default:
+            if !strings.Contains(req.Header.Get("User-Agent"), "iPhone") { t.Fatal("Page needs iPhone user agent") }
+            body = "<script>aType='ios';aKey='0123456789abcdef0123456789abcdef';installToken='public';</script>"
+        }
+        response.Body = io.NopCloser(strings.NewReader(body))
+        return response, nil
+    })
+    destination := t.TempDir()
+    a := testApp(t)
+    if err := a.execute([]string{"--target", "https://www.pgyer.com/example", "--ios", "--download-dir", destination}); err != nil { t.Fatal(err) }
+    saved, err := os.ReadFile(filepath.Join(destination, "package.ipa"))
+    if err != nil || !bytes.Equal(saved, ipa) { t.Fatalf("IPA not downloaded: %v", err) }
+}

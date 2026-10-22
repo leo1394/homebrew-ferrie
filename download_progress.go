@@ -6,6 +6,7 @@ import (
     "os"
     "strings"
     "time"
+    "unicode/utf8"
 
     "golang.org/x/term"
 )
@@ -41,7 +42,7 @@ func (p *downloadProgress) render() {
 }
 
 func (p *downloadProgress) finish() {
-    if p.file != nil { p.render(); fmt.Fprintln(p.out) }
+    if p.file != nil { fmt.Fprint(p.out, "\r\x1b[2K") }
 }
 
 func downloadProgressLine(received, total int64, width int) string {
@@ -57,4 +58,30 @@ func downloadProgressLine(received, total int64, width int) string {
     if available < 0 { return label }
     if filled < 0 { filled = 0 }
     return strings.Repeat("#", filled) + strings.Repeat(" ", available-filled+1) + label
+}
+
+func downloadSize(size int64) string {
+    if size < 1000 { return fmt.Sprintf("%dB", size) }
+    if size < 1000000 { return fmt.Sprintf("%.1fKB", float64(size)/1000) }
+    if size < 1000000000 { return fmt.Sprintf("%.1fMB", float64(size)/1000000) }
+    return fmt.Sprintf("%.1fGB", float64(size)/1000000000)
+}
+
+func downloadCompleteLine(name string, received, total int64, width int) string {
+    size := downloadSize(received)
+    if total > 0 { size += "/" + downloadSize(total) }
+    right := "Downloaded    " + size
+    left := "✔︎ " + name
+    // The check mark plus variation selector occupies one terminal column.
+    gap := width - (utf8.RuneCountInString(left)-1) - len(right)
+    if gap < 2 { gap = 2 }
+    return left + strings.Repeat(" ", gap) + right
+}
+
+func (p *downloadProgress) complete(name string) {
+    width := 80
+    if p.file != nil {
+        if columns, _, err := term.GetSize(int(p.file.Fd())); err == nil && columns > 1 { width = columns-1 }
+    }
+    fmt.Fprintln(p.out, downloadCompleteLine(name, p.received, p.total, width))
 }

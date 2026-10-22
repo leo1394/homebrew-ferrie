@@ -22,3 +22,14 @@ func TestDownloadProgressDoesNotPolluteRedirectedOutput(t *testing.T) {
     progress.finish()
     if out.Len() != 0 || progress.received != 50 { t.Fatal(out.String(), progress.received) }
 }
+
+func TestDownloadCompletionSummary(t *testing.T) {
+    for _, item := range []struct { received, total int64; want string }{
+        {2900000, 2900000, "Downloaded    2.9MB/2.9MB"},
+        {38571383, 38571383, "Downloaded    38.6MB/38.6MB"},
+        {1234, -1, "Downloaded    1.2KB"},
+    } {
+        line := downloadCompleteLine("IPA app.ipa", item.received, item.total, 100)
+        if !strings.HasPrefix(line, "✔︎ IPA app.ipa") || !strings.HasSuffix(line, item.want) { t.Fatal(line) }
+    }
+}
