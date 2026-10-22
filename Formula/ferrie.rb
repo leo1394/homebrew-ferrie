@@ -1,14 +1,8 @@
 class Ferrie < Formula
   desc "Install Android and iOS apps from files or URLs"
   homepage "https://github.com/leo1394/homebrew-ferrie"
-  version "0.2.2"
+  version "0.2.3"
   license "MIT"
-
-  bottle do
-    root_url "https://github.com/leo1394/homebrew-ferrie/releases/download/v0.2.2"
-    sha256 cellar: :any_skip_relocation, arm64_sequoia: "c66a54dc805461ac841e397bd9bb56e3e12cbbb65d4902d3b067879d32bcceb8"
-    sha256 cellar: :any_skip_relocation, sequoia:       "f57ae6fc32c79081522ce22fef96068d51415eec55ec38fe89917fe9cc7ada73"
-  end
 
   head do
     url "https://github.com/leo1394/homebrew-ferrie.git", branch: "master"
@@ -17,23 +11,23 @@ class Ferrie < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/leo1394/homebrew-ferrie/releases/download/v0.2.2/ferrie_0.2.2_darwin_arm64", using: :nounzip
-      sha256 "ae52cdad8a8ed4a983b979db8f4c83e4206adc47d1d8b8c5c18428223f24f53d"
+      url "https://github.com/leo1394/homebrew-ferrie/releases/download/v0.2.3/ferrie_0.2.3_darwin_arm64", using: :nounzip
+      sha256 "d8ab2797ad568de1e85030e8a5299c4bbc044ea7440214b25c8e640559d28e76"
     end
     on_intel do
-      url "https://github.com/leo1394/homebrew-ferrie/releases/download/v0.2.2/ferrie_0.2.2_darwin_amd64", using: :nounzip
-      sha256 "63265dc630800687e22ee959fa1d06d07b43c883fe52fa06e8ddb52890fe67ba"
+      url "https://github.com/leo1394/homebrew-ferrie/releases/download/v0.2.3/ferrie_0.2.3_darwin_amd64", using: :nounzip
+      sha256 "5ee7748adcff42240bf13093a8b46d97efa13d33bd966035f2a9cbef2bebe311"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/leo1394/homebrew-ferrie/releases/download/v0.2.2/ferrie_0.2.2_linux_arm64", using: :nounzip
-      sha256 "40b9c4386bf77ebdc828ccfc79c0a1890892ff1b394d5edd988aa294b59e240e"
+      url "https://github.com/leo1394/homebrew-ferrie/releases/download/v0.2.3/ferrie_0.2.3_linux_arm64", using: :nounzip
+      sha256 "59e9fa7d784016fbd8a0655a902a6444d60004f9ec69c8bd493f9ae499c6563d"
     end
     on_intel do
-      url "https://github.com/leo1394/homebrew-ferrie/releases/download/v0.2.2/ferrie_0.2.2_linux_amd64", using: :nounzip
-      sha256 "a16fb50bc734a310cd501663c4b3807de541c30269f501e4dcea4daeb6fea76b"
+      url "https://github.com/leo1394/homebrew-ferrie/releases/download/v0.2.3/ferrie_0.2.3_linux_amd64", using: :nounzip
+      sha256 "5cd38c2dcd457a953b1c58d7428a14e8ca57d2ea37955b3d2c1a14db9b47e9d2"
     end
   end
 
@@ -53,7 +47,7 @@ class Ferrie < Formula
 
   test do
     output = shell_output("#{bin}/ferrie --version")
-    assert_match "ferrie version 0.2.2 (", output
+    assert_match "ferrie version 0.2.3 (", output
     assert_match(%r{\(\d{4}-\d{2}-\d{2}\)\nhttps://github.com/leo1394/homebrew-ferrie\n\z}, output)
     assert_match "--target", shell_output("#{bin}/ferrie --help")
     assert_match "Did you mean '--target'", shell_output("#{bin}/ferrie --targte app.apk 2>&1", 2)

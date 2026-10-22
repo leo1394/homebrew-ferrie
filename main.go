@@ -17,8 +17,8 @@ import (
     "github.com/leo1394/homebrew-ferrie/internal/selector"
 )
 
-const version = "0.2.2"
-const versionDate = "2026-10-06"
+const version = "0.2.3"
+const versionDate = "2026-10-22"
 const repositoryURL = "https://github.com/leo1394/homebrew-ferrie"
 
 var options = []string{"--target", "--download-dir", "--android", "--ios", "--list", "--device", "--help", "version", "--version"}
