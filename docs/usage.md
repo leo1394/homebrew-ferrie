@@ -139,7 +139,7 @@ ferrie --target "https://play.google.com/store/apps/details?id=com.example.app" 
 - **App Store**：应用链接无法作为 IPA 直链使用。Ferrie 识别链接后返回说明，请在目标设备的 App Store 安装；需要通过电脑安装时，提供适用于设备的已签名 IPA。
 - **浏览器 blob 地址**：字面 `blob:` URL 仅存在于浏览器会话中。请提供它对应的 HTTP(S) 地址或保存后的本地包。
 
-下载无需新增工具。每个请求超时 15 分钟，最多 12 层页面 / 重定向，网页上限 2 MiB，安装包上限 8 GiB。包存入系统临时目录，在正常结束、下载失败或安装失败后删除；强制结束进程或关机可能留下 `ferrie-download-*` 临时目录，可手动清理。下载日志不输出 URL 查询参数。URL 支持 `--target=URL`，建议加引号；`--android` / `--ios` 只用于 URL 类型的 `--target`，且不能同时使用。
+下载无需新增工具。每个请求超时 15 分钟，最多 12 层页面 / 重定向，网页上限 2 MiB，安装包上限 8 GiB。包存入系统临时目录，在正常结束、下载失败或安装失败后删除；强制结束进程或关机可能留下 `ferrie-download-*` 临时目录，可手动清理。下载日志不输出 URL 查询参数。URL 支持 `--target=URL`，建议加引号；`--android` / `--ios` 可用于 URL 或本地安装包；本地包会校验平台是否匹配，两者不能同时使用。
 
 协议参考：[蒲公英安装接口说明](https://www.pgyer.com/doc/en/view/api_install)、[Google Play 应用链接](https://developer.android.com/distribute/marketing-tools/linking-to-google-play)。
 

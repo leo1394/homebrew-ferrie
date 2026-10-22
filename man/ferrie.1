@@ -79,6 +79,15 @@ ferrie \-\-target app.ipa \-\-device DEVICE_ID
 ferrie \-\-target https://example.com/app.apk \-\-android
 ferrie \-\-target https://www.pgyer.com/clobotics-rea-test \-\-android
 .fi
+.SH RECENT URLS
+Omit --target with exactly one connected device, or specify --device ID,
+to select one of the last five unique URLs installed successfully.
+Use Up/Down or j/k to move, f to select, F to select and move down,
+Enter to install immediately, and q or Esc to cancel. No second confirmation.
+The device determines Android/iOS. A terminal is required.
+Local packages, download-only operations and store launches are not recorded.
+History contains complete URLs, including query parameters, in a private file.
+Delete ~/.ferrie/recent-urls.json to clear it (or the file under FERRIE_HOME).
 .SH FILES
 .TP
 .I ~/.ferrie
@@ -87,3 +96,6 @@ Managed device tools and supporting downloads.
 .BR adb (1)
 .PP
 https://github.com/leo1394/homebrew-ferrie
+
+.SH DOWNLOAD ONLY
+Use --target URL --android or --ios with --download-dir DIR to save a package without installing. DIR must already exist; the caller owns cleanup. Cannot be combined with --device.

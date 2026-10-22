@@ -114,6 +114,19 @@ ferrie --target "https://www.pgyer.com/clobotics-rea-test" --android --device SE
 
 `--target` automatically detects local paths and URLs. Quote URLs containing characters such as `&`. Downloads use built-in functionality with no additional runtime dependencies. Temporary packages are removed after success or failure. For pages requiring login, passwords, CAPTCHA or complex JavaScript, download in a browser and use `--target`. See [URL installation](docs/usage-en.md#url-installation).
 
+### Recent URL installations
+
+Omit `--target` with exactly one connected device, or specify `--device ID`, to pick from the five most recently installed, unique URLs:
+
+```sh
+ferrie
+ferrie --device SERIAL
+```
+
+The picker matches Conven: `↑/↓` or `j/k` to move, `f` to select/deselect one item, `F` to select and move down, Enter to install immediately, and `q` / Esc to cancel. There is no second confirmation. Android/iOS is inferred from the selected device. Use `--target` when no history exists, multiple devices are connected without an ID, or the session is non-interactive.
+
+History is stored in `~/.ferrie/recent-urls.json` (under `FERRIE_HOME` when set). Only successful URL package installations are recorded; local files, download-only operations and store launches are excluded. Reusing a URL moves it to the top. Query parameters are hidden in the picker but retained in the private history file for reuse. Delete this file to clear history. Installations made with older versions are not backfilled.
+
 ## Daily commands
 
 | Task | Command |

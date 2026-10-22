@@ -113,6 +113,19 @@ ferrie --target "https://www.pgyer.com/clobotics-rea-test" --android --device SE
 
 `--target` 自动识别本地路径或 URL。包含 `&` 等字符的 URL 请加引号。下载使用 Ferrie 内置能力，不增加运行时依赖，临时包在安装结束或失败后删除。需要登录、密码、验证码或复杂 JavaScript 的页面，请先在浏览器下载，再使用 `--target`。详情见[链接安装](docs/usage.md#链接安装)。
 
+### 最近链接安装
+
+省略 `--target` 时，如果只连接了一台设备，或已通过 `--device ID` 指定设备，Ferrie 会显示最近成功通过 URL 安装的 5 个去重链接：
+
+```sh
+ferrie
+ferrie --device SERIAL
+```
+
+选择器与 Conven 一致：`↑/↓` 或 `j/k` 移动，`f` 单选/取消选择，`F` 选择并下移，Enter 直接安装，`q` / Esc 取消，不再二次确认。根据选定设备自动选择 Android / iOS；多台设备未指定 ID、无历史记录或非交互终端时，请使用 `--target`。
+
+历史保存在 `~/.ferrie/recent-urls.json`（设置 `FERRIE_HOME` 时位于该目录）。只记录安装成功的原始 URL，不记录本地包、仅下载或商店跳转；再次安装同一链接会将其移到首位。列表隐藏查询参数，文件仍保留完整链接供重用，可删除该文件清空历史。旧版本的安装不会补录。
+
 ## 常用命令
 
 | 任务 | 命令 |

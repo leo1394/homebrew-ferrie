@@ -39,10 +39,10 @@ func fakeTool(t *testing.T, name string) string {
 }
 
 func TestParse(t *testing.T) {
-    for _, args := range [][]string{{"--target", "app.apk"}, {"-T", "app.apk", "-d", "id"}, {"--target=app.apk", "--device=id"}, {"--list"}, {"--help"}, {"version"}, {"--version"}} {
+    for _, args := range [][]string{nil, {"--device", "id"}, {"--android"}, {"--target", "app.apk"}, {"-T", "app.apk", "-d", "id"}, {"--target=app.apk", "--device=id"}, {"--list"}, {"--help"}, {"version"}, {"--version"}} {
         if _, err := parse(args); err != nil { t.Errorf("%v: %v", args, err) }
     }
-    for _, args := range [][]string{nil, {"--target"}, {"--target", "--list"}, {"--device", "id"}, {"--list", "--device", "id"}, {"--target=x", "--list"}, {"--device=", "--target=x"}, {"--list=yes"}, {"--list", "--list"}, {"--lis"}, {"--target=x", "--target=y"}} {
+    for _, args := range [][]string{{"--target"}, {"--target", "--list"}, {"--list", "--device", "id"}, {"--target=x", "--list"}, {"--device=", "--target=x"}, {"--list=yes"}, {"--list", "--list"}, {"--lis"}, {"--target=x", "--target=y"}} {
         if _, err := parse(args); err == nil { t.Errorf("Accepted invalid arguments: %v", args) }
     }
 }
@@ -322,5 +322,17 @@ func TestVersionOutput(t *testing.T) {
         a := testApp(t)
         if err := a.execute([]string{argument}); err != nil { t.Fatal(err) }
         if got := a.out.(*bytes.Buffer).String(); got != want { t.Errorf("%s: got %q, want %q", argument, got, want) }
+    }
+}
+
+func TestLocalPackagePlatformFlags(t *testing.T) {
+    for _, tc := range []struct { extension, flag string }{{"apk", "--android"}, {"aab", "--android"}, {"ipa", "--ios"}} {
+        target := filepath.Join(t.TempDir(), "app."+tc.extension)
+        if err := os.WriteFile(target, nil, 0600); err != nil { t.Fatal(err) }
+        parsed, err := parse([]string{"--target", target, tc.flag})
+        if err != nil || parsed.platform != strings.TrimPrefix(tc.flag, "--") { t.Fatal(parsed, err) }
+        wrong := "--ios"
+        if tc.flag == "--ios" { wrong = "--android" }
+        if err := testApp(t).execute([]string{"--target", target, wrong}); err == nil || !strings.Contains(err.Error(), "does not match") { t.Fatalf("mismatched platform: %v", err) }
     }
 }

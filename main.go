@@ -13,18 +13,21 @@ import (
     "strconv"
     "strings"
     "time"
+
+    "github.com/leo1394/homebrew-ferrie/internal/selector"
 )
 
 const version = "0.2.2"
 const versionDate = "2026-10-06"
 const repositoryURL = "https://github.com/leo1394/homebrew-ferrie"
 
-var options = []string{"--target", "--android", "--ios", "--list", "--device", "--help", "version", "--version"}
+var options = []string{"--target", "--download-dir", "--android", "--ios", "--list", "--device", "--help", "version", "--version"}
 
 const help = `Ferrie — install Android/iOS apps on connected devices.
 
 Usage:
   ferrie --target PATH_OR_URL [--android | --ios] [--device ID]
+  ferrie [--device ID]
   ferrie --list
   ferrie --help
   ferrie version | --version
@@ -32,12 +35,17 @@ Usage:
 Options:
   -T, --target PATH_OR_URL
                     Install a local package or download from a URL
-      --android     Choose Android for a URL target
-      --ios         Choose iOS for a URL target
+      --android     Choose Android; validate local package type
+      --ios         Choose iOS; validate local package type
+      --download-dir PATH
+                    Download a URL package into PATH without installing
   -d, --device ID    Select this exact device ID
   -l, --list         List connected Android and iOS devices
   -h, --help         Show help
   -v, --version      Show version
+
+Without --target, select from the last 5 successful URL installations when
+one device is connected or --device ID is supplied. Requires a terminal.
 
 Try updating first to preserve app data. If installation fails, uninstall/retry
 requires an existing app with the same ID and your confirmation of data loss.
@@ -49,7 +57,7 @@ AAB/APKS additionally use a managed Java runtime and bundletool.
 `
 
 type arguments struct {
-    target, device, action, platform string
+    target, device, action, platform, downloadDir string
 }
 
 type usageError struct { message string }
@@ -68,7 +76,7 @@ func parse(args []string) (arguments, error) {
         case "-v", "version": key = "--version"
         }
         switch key {
-        case "--target", "--device":
+        case "--target", "--device", "--download-dir":
             if !inline {
                 if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
                     return result, usageError{key + " requires a value"}
@@ -80,6 +88,7 @@ func parse(args []string) (arguments, error) {
             switch key {
             case "--target": result.target = value
             case "--device": result.device = value
+            case "--download-dir": result.downloadDir = value
             }
         case "--android", "--ios":
             if inline { return result, usageError{key + " does not take a value"} }
@@ -99,10 +108,8 @@ func parse(args []string) (arguments, error) {
         if seen[key] { return result, usageError{"Repeated argument: " + key} }
         seen[key] = true
     }
-    if result.action == "" && result.target == "" { return result, usageError{"Use --target PATH_OR_URL or --list; see ferrie --help"} }
-    if result.action != "" && (result.target != "" || result.platform != "" || result.device != "") { return result, usageError{"Do not combine --list/--help/--version with installation arguments"} }
-    if result.platform != "" && !isURLTarget(result.target) { return result, usageError{"--android/--ios requires a URL in --target"} }
-    if result.device != "" && result.target == "" { return result, usageError{"--device requires --target"} }
+    if result.action != "" && (result.target != "" || result.platform != "" || result.device != "" || result.downloadDir != "") { return result, usageError{"Do not combine --list/--help/--version with installation arguments"} }
+    if result.downloadDir != "" && (!isURLTarget(result.target) || result.device != "") { return result, usageError{"--download-dir requires a URL target and cannot be combined with --device"} }
     return result, nil
 }
 
@@ -149,6 +156,7 @@ type app struct {
     interactive bool
     cache string
     run runner
+    pickRecent func(context.Context, *os.File, io.Writer, selector.Prompt, []selector.Candidate) (selector.Candidate, bool, error)
 }
 
 func commandRunner(out, errOut io.Writer) runner {
@@ -191,10 +199,19 @@ func (a *app) execute(args []string) error {
         a.printDevices(devices)
         return err
     }
+    if parsed.target == "" {
+        if err := a.chooseRecentTarget(&parsed); err != nil { return err }
+    }
+    sourceURL := ""
     if isURLTarget(parsed.target) {
+        sourceURL = parsed.target
         source, err := a.resolveURL(parsed.target, parsed.platform)
         if err != nil { return err }
         defer source.cleanup()
+        if parsed.downloadDir != "" {
+            if source.store != "" { return errors.New("Store links do not provide a downloadable installation package") }
+            return saveDownload(source.path, parsed.downloadDir)
+        }
         if source.store != "" { return a.openStore(source, parsed.device) }
         parsed.target = source.path
     }
@@ -214,6 +231,7 @@ func (a *app) execute(args []string) error {
     case ".apk", ".apks", ".aab":
     default: return errors.New("Unsupported package; expected .apk, .apks, .aab or .ipa")
     }
+    if parsed.platform != "" && parsed.platform != kind { return fmt.Errorf("Package type %s does not match --%s", kind, parsed.platform) }
     required := []string{"adb"}
     if kind == "ios" { required = []string{"ios"} } else if !strings.EqualFold(filepath.Ext(target), ".apk") { required = append(required, "java", "bundletool") }
     if err := a.prepare(required...); err != nil { return err }
@@ -221,7 +239,11 @@ func (a *app) execute(args []string) error {
     if err != nil { return err }
     device, err := a.selectDevice(devices, parsed.device)
     if err != nil { return err }
-    return a.install(target, device)
+    if err := a.install(target, device); err != nil { return err }
+    if sourceURL != "" {
+        if err := a.rememberURL(sourceURL); err != nil { fmt.Fprintf(a.err, "Warning: could not save recent URL: %v\n", err) }
+    }
+    return nil
 }
 
 func (a *app) selectDevice(devices []device, id string) (device, error) {

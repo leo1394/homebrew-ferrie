@@ -46,7 +46,7 @@ func TestURLArguments(t *testing.T) {
         got, err := parse(args)
         if err != nil || got.target != "https://example.com/app" || got.platform == "" { t.Fatalf("%+v %v", got, err) }
     }
-    for _, args := range [][]string{{"--target"}, {"--target", ""}, {"--url", "https://example.com/app"}, {"--android"}, {"--target", "a", "--android", "--ios"}, {"--target", "a", "--help"}, {"--target", "a", "--ios=yes"}, {"--target", "a", "--target", "b"}, {"--target", "a.apk", "--android"}} {
+    for _, args := range [][]string{{"--target"}, {"--target", ""}, {"--url", "https://example.com/app"}, {"--target", "a", "--android", "--ios"}, {"--target", "a", "--help"}, {"--target", "a", "--ios=yes"}, {"--target", "a", "--target", "b"}} {
         if _, err := parse(args); err == nil { t.Fatalf("Accepted %v", args) }
     }
     if similar("--andriod") != "--android" { t.Fatal("Missing suggestion") }
@@ -162,6 +162,7 @@ func TestURLUsesExistingInstallAndCleansUp(t *testing.T) {
     }
     if err := a.execute([]string{"--target", server.URL, "--device", "serial"}); err == nil { t.Fatal("Failure swallowed") }
     if downloaded == "" { t.Fatal("Install not called") }
+    if history, err := a.recentURLs(); err != nil || len(history) != 0 { t.Fatalf("Failed installation recorded: %v %v", history, err) }
     if _, err := os.Stat(downloaded); !os.IsNotExist(err) { t.Fatal("Download leaked on installation failure") }
 }
 
@@ -214,4 +215,23 @@ func TestStoreLinks(t *testing.T) {
     if !called || strings.Contains(a.out.(*bytes.Buffer).String(), "Installed successfully") { t.Fatal("Store status is incorrect") }
     storeOutput = "Starting: Intent"
     if err := a.execute([]string{"--target", "https://play.google.com/store/apps/details?id=com.example.app"}); err == nil { t.Fatal("Unconfirmed store launch reported as success") }
+}
+
+func TestDownloadOnlyProducesReusableFileWithoutDeviceAccess(t *testing.T) {
+    data := appArchive(t, "AndroidManifest.xml")
+    requests := 0
+    server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) { requests++; w.Write(data) }))
+    defer server.Close()
+    destination := t.TempDir()
+    a := testApp(t)
+    if err := a.execute([]string{"--target", server.URL, "--android", "--download-dir", destination}); err != nil { t.Fatal(err) }
+    if history, err := a.recentURLs(); err != nil || len(history) != 0 { t.Fatalf("Download-only recorded as installation: %v %v", history, err) }
+    saved, err := os.ReadFile(filepath.Join(destination, "package.apk"))
+    if err != nil || !bytes.Equal(saved, data) || requests != 1 { t.Fatal("download was not preserved", err, requests) }
+    if err := a.execute([]string{"--target", server.URL, "--android", "--download-dir", destination}); err == nil { t.Fatal("existing file overwritten") }
+    saved, _ = os.ReadFile(filepath.Join(destination, "package.apk"))
+    if !bytes.Equal(saved, data) { t.Fatal("existing download changed") }
+    for _, args := range [][]string{{"--target", "app.apk", "--download-dir", destination}, {"--target", server.URL, "--device", "id", "--download-dir", destination}} {
+        if _, err := parse(args); err == nil { t.Fatal("invalid download-only arguments accepted") }
+    }
 }

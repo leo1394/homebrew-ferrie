@@ -369,3 +369,21 @@ func (r *urlResolver) pgyer(u *url.URL, page string, depth int) (urlSource, erro
     next.Path, next.RawPath, next.RawQuery = "/app/install/"+key, "", query.Encode()
     return r.resolve(next.String(), u.String(), depth+1)
 }
+
+// Copy into an explicitly supplied directory; the caller owns its lifetime.
+func saveDownload(source, directory string) error {
+    directory, err := filepath.Abs(directory)
+    if err != nil { return err }
+    info, err := os.Stat(directory)
+    if err != nil || !info.IsDir() { return errors.New("Download destination must be an existing directory") }
+    input, err := os.Open(source)
+    if err != nil { return err }
+    defer input.Close()
+    destination := filepath.Join(directory, "package"+strings.ToLower(filepath.Ext(source)))
+    output, err := os.OpenFile(destination, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+    if err != nil { return err }
+    _, copyErr := io.Copy(output, input)
+    closeErr := output.Close()
+    if copyErr != nil || closeErr != nil { os.Remove(destination); return errors.Join(copyErr, closeErr) }
+    return nil
+}
