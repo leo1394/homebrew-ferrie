@@ -320,7 +320,7 @@ func TestApprovedDependencyDownloadsOnceAndReusesCache(t *testing.T) {
 }
 
 func TestVersionOutput(t *testing.T) {
-    const want = "ferrie version 0.2.5 (2026-10-22)\nhttps://github.com/leo1394/homebrew-ferrie\n"
+    const want = "ferrie version 0.2.6 (2026-10-22)\nhttps://github.com/leo1394/homebrew-ferrie\n"
     for _, argument := range []string{"--version", "version", "-v"} {
         a := testApp(t)
         if err := a.execute([]string{argument}); err != nil { t.Fatal(err) }

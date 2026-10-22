@@ -17,7 +17,7 @@ import (
     "github.com/leo1394/homebrew-ferrie/internal/selector"
 )
 
-const version = "0.2.5"
+const version = "0.2.6"
 const versionDate = "2026-10-22"
 const repositoryURL = "https://github.com/leo1394/homebrew-ferrie"
 
