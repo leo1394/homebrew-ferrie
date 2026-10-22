@@ -4,6 +4,12 @@ class Ferrie < Formula
   version "0.2.5"
   license "MIT"
 
+  bottle do
+    root_url "https://github.com/leo1394/homebrew-ferrie/releases/download/v0.2.5"
+    sha256 cellar: :any_skip_relocation, arm64_sequoia: "fd83f356065003312d5dc2b52b909d2b0ac35b4fe29cbdc0d81b86fd37d005ec"
+    sha256 cellar: :any_skip_relocation, sequoia:       "386c8e88c9d446add8f0e837f9565895d7936921709821becdb3b7898d6071bc"
+  end
+
   head do
     url "https://github.com/leo1394/homebrew-ferrie.git", branch: "master"
     depends_on "go" => :build
