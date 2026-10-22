@@ -133,7 +133,7 @@ func (a *app) tool(name string, install bool) (string, error) {
 }
 
 func (a *app) download(url, destination, checksum string) error {
-    fmt.Fprintln(a.err, "Downloading", url)
+    fmt.Fprintln(a.err, "==> Fetching downloads for:", safeLinkLabel(url))
     request, err := http.NewRequestWithContext(a.ctx, http.MethodGet, url, nil)
     if err != nil { return err }
     client := &http.Client{Timeout: 10*time.Minute}
@@ -144,11 +144,15 @@ func (a *app) download(url, destination, checksum string) error {
     file, err := os.Create(destination)
     if err != nil { return err }
     digest := sha256.New()
-    _, copyErr := io.Copy(io.MultiWriter(file, digest), response.Body)
+    progress := newDownloadProgress(a.err, response.ContentLength)
+    size, copyErr := io.Copy(io.MultiWriter(file, digest, progress), response.Body)
+    progress.finish()
     closeErr := file.Close()
     if copyErr != nil { return copyErr }
     if closeErr != nil { return closeErr }
+    if response.ContentLength >= 0 && size != response.ContentLength { return errors.New("Incomplete tool download") }
     if checksum != "" && !strings.EqualFold(hex.EncodeToString(digest.Sum(nil)), checksum) { return errors.New("SHA256 verification failed") }
+    progress.complete(filepath.Base(safeLinkLabel(url)))
     return nil
 }
 

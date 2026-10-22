@@ -229,7 +229,7 @@ func (r *urlResolver) savePackage(body io.Reader, length int64, host string) (ur
     target := filepath.Join(dir, "app"+extension)
     if err := os.Rename(path, target); err != nil { return empty, err }
     keep = true
-    progress.complete(strings.ToUpper(strings.TrimPrefix(extension, ".")) + " " + filepath.Base(target))
+    progress.complete(strings.ToUpper(strings.TrimPrefix(extension, ".")) + " " + filepath.Base(target) + packageVersionLabel(target))
     return urlSource{path: target, platform: platform}, nil
 }
 

@@ -111,3 +111,14 @@ func TestADBRecoveryCancellation(t *testing.T) {
     }
     if _, err := a.discoverForInstall("android", ""); !errors.Is(err, context.Canceled) { t.Fatal(err) }
 }
+
+func TestIOSMissingDeviceExplainsConnection(t *testing.T) {
+    fakeTool(t, "ios")
+    a := testApp(t)
+    a.run = func(_ context.Context, _ bool, _ string, args ...string) (string, error) {
+        if strings.Join(args, " ") != "list" { t.Fatal("Unexpected device action", args) }
+        return `{"deviceList":[]}`, nil
+    }
+    _, err := a.discoverForInstall("ios", "00008110-001C7C491E93801E")
+    if err == nil || !strings.Contains(err.Error(), "go-ios") || !strings.Contains(err.Error(), "USB") { t.Fatalf("Missing connection guidance: %v", err) }
+}

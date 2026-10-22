@@ -2,6 +2,7 @@ package main
 
 import (
     "bytes"
+    "os"
     "strings"
     "testing"
 )
@@ -31,5 +32,16 @@ func TestDownloadCompletionSummary(t *testing.T) {
     } {
         line := downloadCompleteLine("IPA app.ipa", item.received, item.total, 100)
         if !strings.HasPrefix(line, "✔︎ IPA app.ipa") || !strings.HasSuffix(line, item.want) { t.Fatal(line) }
+    }
+}
+
+func TestDownloadCompletionColor(t *testing.T) {
+    for _, disabled := range []string{"", "1"} {
+        t.Setenv("NO_COLOR", disabled)
+        var out bytes.Buffer
+        progress := &downloadProgress{out:&out, file:os.Stdout, total:4, received:4}
+        progress.complete("APK app.apk (1.2+3)")
+        colored := strings.Contains(out.String(), "\x1b[1;32m✔︎\x1b[0m")
+        if colored != (disabled == "") { t.Fatal(out.String()) }
     }
 }

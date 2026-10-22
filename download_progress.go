@@ -83,5 +83,7 @@ func (p *downloadProgress) complete(name string) {
     if p.file != nil {
         if columns, _, err := term.GetSize(int(p.file.Fd())); err == nil && columns > 1 { width = columns-1 }
     }
-    fmt.Fprintln(p.out, downloadCompleteLine(name, p.received, p.total, width))
+    line := downloadCompleteLine(name, p.received, p.total, width)
+    if p.file != nil && os.Getenv("NO_COLOR") == "" { line = strings.Replace(line, "✔︎", "\x1b[1;32m✔︎\x1b[0m", 1) }
+    fmt.Fprintln(p.out, line)
 }

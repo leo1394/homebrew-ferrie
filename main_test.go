@@ -260,8 +260,11 @@ func TestDownloadChecksumAndHTTPFailure(t *testing.T) {
     destination := filepath.Join(t.TempDir(), "download")
     checksum := "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
     if err := a.download(server.URL, destination, checksum); err != nil { t.Fatal(err) }
+    if output := a.err.(*bytes.Buffer).String(); !strings.Contains(output, "==> Fetching downloads for:") || !strings.Contains(output, "Downloaded    4B/4B") { t.Fatal(output) }
+    a.err.(*bytes.Buffer).Reset()
     if err := a.download(server.URL, destination, strings.Repeat("0", 64)); err == nil { t.Fatal("Checksum mismatch ignored") }
     if err := a.download(server.URL + "/bad", destination, ""); err == nil { t.Fatal("HTTP failure ignored") }
+    if strings.Contains(a.err.(*bytes.Buffer).String(), "✔︎") { t.Fatal("Failed tool download reported success") }
 }
 
 func TestArchiveTraversal(t *testing.T) {
@@ -306,7 +309,7 @@ func TestApprovedDependencyDownloadsOnceAndReusesCache(t *testing.T) {
     http.DefaultTransport = roundTripFunc(func(request *http.Request) (*http.Response, error) {
         downloads++
         if request.URL.Host != "github.com" { t.Fatal(request.URL) }
-        return &http.Response{StatusCode:200, Body:io.NopCloser(bytes.NewReader(archive.Bytes())), Header:make(http.Header)}, nil
+        return &http.Response{StatusCode:200, ContentLength:int64(archive.Len()), Body:io.NopCloser(bytes.NewReader(archive.Bytes())), Header:make(http.Header)}, nil
     })
     a := testApp(t)
     a.in, a.interactive = strings.NewReader("y\n"), true

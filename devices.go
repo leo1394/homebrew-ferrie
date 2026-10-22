@@ -119,6 +119,9 @@ func (a *app) install(target string, selected device) error {
 // Recovery is restricted to installation discovery. Listing/completion never restart adb.
 func (a *app) discoverForInstall(kind, id string) ([]device, error) {
     devices, err := a.discover(kind, false, false)
+    if kind == "ios" && err == nil && len(devices) == 0 {
+        return nil, errors.New("No iOS device is reachable through go-ios. Connect via USB, unlock the device and trust this computer, then retry. A remembered device or an unlocked phone alone does not establish a wireless connection")
+    }
     if kind != "android" || (err == nil && !needsADBRecovery(devices, id)) { return devices, err }
     if a.ctx.Err() != nil { return nil, a.ctx.Err() }
     adb, toolErr := a.tool("adb", false)
